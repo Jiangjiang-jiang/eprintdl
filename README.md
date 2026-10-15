@@ -37,7 +37,7 @@ eprintdl doctor
 python tools/setup_llm_cli.py
 ```
 
-脚本会写出 `.mcp.json`、`.codex/config.toml` 和用户级 `~/.codex/config.toml`，重启 Claude Code 或 Codex 后的输入prompt“下载 eprint 2024/1000”即可。
+脚本会写出 `.mcp.json`、`.codex/config.toml` 和用户级 `~/.codex/config.toml`，重启 Claude Code 或 Codex，在 Claude Code 里用 `/mcp`、在 Codex 里用 `codex mcp list` 确认 eprintdl 已连接，之后输入prompt“下载 eprint 2024/1000”即可。
 
 WSL 下脚本会自动选 Windows 版 Python，这是因为 WSL2 默认网络下 Linux 进程连不上 Windows Chrome 的调试端口，无法找到时用 `--python /mnt/c/.../python.exe` 指定。返回的文件路径为 Windows 路径，需用 `wslpath -u` 转换。默认下载目录为 `eprint-data/`。
 
