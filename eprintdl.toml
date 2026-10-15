@@ -1,0 +1,12 @@
+[paths]
+base_dir = "eprint-data"
+
+[download]
+rate = 1.0
+retries = 3
+timeout = 120.0
+title_len = 120
+chrome = ""
+
+[server]
+port = 0

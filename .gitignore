@@ -1,0 +1,17 @@
+eprint-data/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.mcp.json
+.codex/
+.claude/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.part
+*.bak
