@@ -8,11 +8,6 @@
 2024-1000_File-Injection_Attacks_on_Searchable_Encryption,_Based_on_Binomial_Structures.pdf
 ```
 
-- 按年份采集元数据（标题、作者、分类、摘要），存入本地 SQLite。
-- 按年份、关键词或指定编号下载 PDF，自动跳过已下载文件，重试失败项。
-- 校验文件完整性，导出 CSV 或 JSON 元数据。
-- 提供 MCP 服务，供 Claude Code 和 Codex 调用。
-
 ## 已知问题
 
 ePrint 元数据可通过 OAI-PMH 接口获取，其中的日期为最后修改时间。论文 PDF 下载则需通过 Cloudflare 人机验证。论文 PDF 只能通过浏览器导航才能下载，直接用 urllib、requests 或 curl 请求会返回 403，在浏览器内通过脚本发起 fetch 请求也不行。
@@ -25,7 +20,7 @@ ePrint 元数据可通过 OAI-PMH 接口获取，其中的日期为最后修改�
 
 ## 安装
 
-需要 Python 3.10 或更新版本。
+Python 3.10 或更新版本。
 
 ```bash
 pip install .
