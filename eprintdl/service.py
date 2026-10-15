@@ -206,8 +206,8 @@ def download_papers(
             headless=config.headless,
             limiter=limiter,
             page_timeout=config.timeout,
-            verbose=False,
-            on_message=None,
+            verbose=True,
+            on_message=reporter.say,
             needs_windows_path=needs_windows_path,
         ) as downloader:
             for index, row in enumerate(pending, 1):

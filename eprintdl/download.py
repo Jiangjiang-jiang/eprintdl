@@ -294,8 +294,12 @@ class BrowserDownloader:
             self._navigate(url)
         except Exception as exc:
             return {"error": repr(exc)}
-        if not event.wait(timeout):
-            return {"error": f"等待响应超时（{timeout:.0f}s）"}
+        waited = 0.0
+        while not event.wait(min(15.0, timeout - waited)):
+            waited += 15.0
+            if waited >= timeout:
+                return {"error": f"等待响应超时（{timeout:.0f}s）"}
+            self._say(f"  仍在等待站点响应（已等 {waited:.0f} 秒，{timeout:.0f} 秒后放弃并重试）...")
         return self.interceptor.result(url) or {"error": "没有拿到响应体"}
 
     @staticmethod
@@ -394,6 +398,8 @@ class BrowserDownloader:
             snippet = data[:120].decode("utf-8", "replace").replace("\n", " ")
             last_error = DownloadError(f"响应不是 PDF（HTTP {status}）: {snippet}")
             self._reset_page()
+            if status in (404, 410):
+                raise DownloadError(f"{paper_id} 不存在或已撤回（HTTP {status}）")
 
         raise DownloadError(f"{paper_id} 下载失败: {last_error}")
 
