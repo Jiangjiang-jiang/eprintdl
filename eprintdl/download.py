@@ -137,7 +137,9 @@ class BrowserDownloader:
         on_message: Callable[[str], None] | None = None,
         warmup: bool = True,
         needs_windows_path: bool = False,
+        window: str = "normal",
     ) -> None:
+        self.window = window
         self.chrome_path = chrome_path or resolve_browser()[0]
         self.profile_dir = profile_dir
         self.port = port
@@ -180,6 +182,7 @@ class BrowserDownloader:
                 headless=self.headless,
                 log_path=os.path.join(self.profile_dir, "chrome.log"),
                 needs_windows_path=self.needs_windows_path,
+                window=self.window,
             )
             self.conn = self.chrome.start()
         except CdpError as exc:

@@ -92,6 +92,7 @@ class Config:
     chrome: str = ""
     port: int = 0
     headless: bool = False
+    window: str = "minimized"
     extra: dict = field(default_factory=dict)
 
     def as_dict(self) -> dict:
@@ -109,6 +110,7 @@ class Config:
             "chrome": self.chrome or None,
             "port": self.port,
             "headless": self.headless,
+            "window": self.window,
         }
 
 
@@ -174,6 +176,7 @@ def load_config(
         chrome=chrome_value,
         port=int(server.get("port", 0)),
         headless=bool(download.get("headless", False)),
+        window=str(download.get("window", "minimized") or "minimized").strip().lower(),
         extra={k: v for k, v in data.items() if k not in ("paths", "download", "server")},
     )
 
@@ -202,6 +205,7 @@ retries = 3
 timeout = 120.0
 title_len = 120
 chrome = ""
+window = "minimized"
 
 [server]
 port = 0

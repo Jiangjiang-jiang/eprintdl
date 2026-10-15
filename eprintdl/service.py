@@ -209,6 +209,7 @@ def download_papers(
             verbose=True,
             on_message=reporter.say,
             needs_windows_path=needs_windows_path,
+            window=config.window,
         ) as downloader:
             for index, row in enumerate(pending, 1):
                 paper_id = row["paper_id"]

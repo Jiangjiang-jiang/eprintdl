@@ -188,8 +188,10 @@ class Chrome:
         log_path: str | None = None,
         needs_windows_path: bool = False,
         startup_timeout: float = 60.0,
+        window: str = "normal",
     ) -> None:
         self.startup_timeout = startup_timeout
+        self.window = window
         self.chrome_path = chrome_path
         self.user_data_dir = user_data_dir
         self.port = port
@@ -227,6 +229,8 @@ class Chrome:
         ]
         if self.headless:
             args.insert(1, "--headless=new")
+        if self.window == "offscreen":
+            args[1:1] = ["--window-position=-32000,-32000", "--window-size=1280,900"]
         if extra_args:
             args.extend(extra_args)
         os.makedirs(os.path.dirname(self.log_path), exist_ok=True)
@@ -256,6 +260,16 @@ class Chrome:
             raise CdpError("浏览器没有可用的页面目标")
         self.conn = CdpConnection(targets[0]["webSocketDebuggerUrl"], timeout=180)
         self.conn.call("Page.enable")
+        if self.window == "minimized":
+            try:
+                window = self.conn.call("Browser.getWindowForTarget", {"targetId": targets[0]["id"]}, timeout=10)
+                self.conn.call(
+                    "Browser.setWindowBounds",
+                    {"windowId": window["windowId"], "bounds": {"windowState": "minimized"}},
+                    timeout=10,
+                )
+            except Exception:
+                pass
         return self.conn
 
     def _kill(self) -> None:
@@ -268,7 +282,10 @@ class Chrome:
 
     def stop(self) -> None:
         if self.conn:
-            self.conn.close()
+            try:
+                self.conn.close()
+            except Exception:
+                pass
         if self.proc and self.proc.poll() is None:
             self.proc.terminate()
             try:

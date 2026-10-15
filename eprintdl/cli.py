@@ -58,6 +58,7 @@ def build_config(args: argparse.Namespace) -> Config:
         "chrome": getattr(args, "chrome", None) or None,
         "port": getattr(args, "port", None),
         "headless": True if getattr(args, "headless", False) else None,
+        "window": getattr(args, "window", None),
     }
     return load_config(getattr(args, "config", None), overrides=overrides)
 
@@ -169,6 +170,7 @@ def _browser_launch_check(config: Config, browser: str, needs_windows_path: bool
                 headless=config.headless,
                 needs_windows_path=needs_windows_path,
                 startup_timeout=25.0,
+                window=config.window,
             )
             try:
                 chrome.start()
@@ -645,7 +647,8 @@ def build_parser() -> argparse.ArgumentParser:
         target.add_argument(
             "--port", type=int, default=None, help="调试端口（默认自动分配）"
         )
-        target.add_argument("--headless", action="store_true", help="无头模式（更易被拦）")
+        target.add_argument("--headless", action="store_true", help="无头模式（会被 Cloudflare 拦截，仅供试验）")
+        target.add_argument("--window", choices=["normal", "offscreen", "minimized"], help="浏览器窗口：minimized 启动后最小化（默认），offscreen 移到屏幕外，normal 正常显示")
         target.add_argument(
             "--lock-timeout", type=float, default=120.0, help="等待其它下载任务的最长秒数"
         )
@@ -654,6 +657,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_doctor = sub.add_parser("doctor", help="环境自检（Python/平台/浏览器/网络/配置）")
     p_doctor.add_argument("--chrome")
+    p_doctor.add_argument("--window", choices=["normal", "offscreen", "minimized"])
     p_doctor.set_defaults(func=cmd_doctor)
 
     p_init = sub.add_parser("init", help="写出 eprintdl.toml 配置模板")
