@@ -187,7 +187,9 @@ class Chrome:
         headless: bool = False,
         log_path: str | None = None,
         needs_windows_path: bool = False,
+        startup_timeout: float = 60.0,
     ) -> None:
+        self.startup_timeout = startup_timeout
         self.chrome_path = chrome_path
         self.user_data_dir = user_data_dir
         self.port = port
@@ -230,7 +232,7 @@ class Chrome:
         os.makedirs(os.path.dirname(self.log_path), exist_ok=True)
         log = open(self.log_path, "wb")
         self.proc = subprocess.Popen(args, stdout=log, stderr=log)
-        deadline = time.time() + 60
+        deadline = time.time() + self.startup_timeout
         version = None
         while time.time() < deadline:
             try:
@@ -244,15 +246,25 @@ class Chrome:
                     raise CdpError(f"浏览器启动后立刻退出，日志见 {self.log_path}")
                 time.sleep(0.4)
         if not version:
-            raise TimeoutError("等待浏览器调试端口超时")
+            self._kill()
+            raise TimeoutError(f"等待浏览器调试端口超时（{int(self.startup_timeout)} 秒内 127.0.0.1:{self.port} 无响应）")
         self.version = version
         with urllib.request.urlopen(f"http://127.0.0.1:{self.port}/json/list", timeout=10) as resp:
             targets = [t for t in json.load(resp) if t.get("type") == "page"]
         if not targets:
+            self._kill()
             raise CdpError("浏览器没有可用的页面目标")
         self.conn = CdpConnection(targets[0]["webSocketDebuggerUrl"], timeout=180)
         self.conn.call("Page.enable")
         return self.conn
+
+    def _kill(self) -> None:
+        if self.proc and self.proc.poll() is None:
+            self.proc.kill()
+            try:
+                self.proc.wait(timeout=10)
+            except Exception:
+                pass
 
     def stop(self) -> None:
         if self.conn:

@@ -5,12 +5,13 @@ import time
 from dataclasses import dataclass, field
 from typing import Iterable, Sequence
 
+from .cdp import CdpError
 from .config import Config
 from .download import BrowserDownloader, ChallengeError, DownloadError
 from .locking import ChromeLock, LockTimeout
+from .platform import browser_preflight, resolve_browser
 from .reporter import Reporter
 from .store import Store
-from .platform import resolve_browser
 from .utils import human_bytes, normalize_paper_id, paper_stem
 
 EXIT_OK = 0
@@ -187,6 +188,14 @@ def download_papers(
         reporter.say(
             "  提示：使用 Windows 版浏览器（WSL 场景），路径参数会自动转换为 Windows 形式。"
         )
+    problems = browser_preflight(browser_path, needs_windows_path, config.profile)
+    if problems:
+        outcome.ok = False
+        outcome.failed = 1
+        outcome.exit_code = EXIT_USAGE
+        outcome.results.append(PaperReport("", "failed", error=" ".join(problems)))
+        reporter.warn("无法启动浏览器：" + " ".join(problems))
+        return outcome
     started_all = time.monotonic()
 
     def run() -> None:
@@ -276,6 +285,14 @@ def download_papers(
         outcome.ok = False
         outcome.exit_code = EXIT_LOCK_TIMEOUT
         outcome.results.append(PaperReport("", "failed", error=str(exc)))
+        return outcome
+    except (DownloadError, CdpError, TimeoutError, OSError) as exc:
+        detail = f"启动浏览器失败: {exc}"
+        outcome.ok = False
+        outcome.failed += 1
+        outcome.exit_code = EXIT_PARTIAL_FAILURE
+        outcome.results.append(PaperReport("", "failed", error=detail))
+        reporter.warn(detail)
         return outcome
 
     outcome.elapsed = time.monotonic() - started_all

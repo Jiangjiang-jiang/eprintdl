@@ -361,7 +361,8 @@ class Server:
 
 def main() -> int:
     try:
-        sys.stdout.reconfigure(line_buffering=True)
+        sys.stdout.reconfigure(encoding="utf-8", line_buffering=True)
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
     except Exception:
         pass
     _log(f"启动 {SERVER_NAME} {__version__}（协议 {PROTOCOL_VERSION}）")

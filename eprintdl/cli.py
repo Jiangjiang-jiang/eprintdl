@@ -12,7 +12,8 @@ from .browse import enrich_paper, harvest_year
 from .config import Config, load_config, write_default_config
 from .http import FetchError
 from .oai import OaiClient, OaiError
-from .platform import describe_platform
+from .locking import ChromeLock, LockTimeout
+from .platform import browser_preflight, describe_platform, resolve_browser, wsl_networking_mode
 from .reporter import Reporter, resolve_mode
 from .service import (
     EXIT_OK,
@@ -28,7 +29,6 @@ from .service import (
     verify_files,
 )
 from .store import Store
-from .platform import resolve_browser
 from .utils import BASE_URL, RateLimiter, UA, human_bytes, paper_stem
 
 
@@ -103,12 +103,25 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     report["browser"] = browser
     report["browser_needs_windows_path"] = needs_windows_path
     if browser:
-        kind = (
-            "Windows 程序，经 WSL interop 调用，路径会自动转换"
-            if needs_windows_path
-            else "本机程序"
-        )
-        reporter.say(f"浏览器      : {browser}\n  通过：{kind}，可用于下载 PDF")
+        kind = "Windows 程序，经 WSL interop 调用" if needs_windows_path else "本机程序"
+        reporter.say(f"浏览器      : {browser}（{kind}）")
+        if platform_info["in_wsl"]:
+            reporter.say(f"  WSL 网络模式: {wsl_networking_mode()}")
+        preflight = browser_preflight(browser, needs_windows_path, config.profile)
+        report["browser_preflight"] = preflight
+        for problem in preflight:
+            problems += 1
+            reporter.warn(f"  问题：{problem}")
+        if not preflight:
+            launch_ok, detail = _browser_launch_check(config, browser, needs_windows_path)
+            report["browser_launch"] = {"ok": launch_ok, "detail": detail}
+            if launch_ok:
+                reporter.say(f"  通过：浏览器可启动并接受控制（{detail}）")
+            elif launch_ok is None:
+                reporter.say(f"  跳过启动测试：{detail}")
+            else:
+                problems += 1
+                reporter.warn(f"  问题：浏览器启动测试失败，{detail}")
     else:
         problems += 1
         reporter.warn(
@@ -142,6 +155,31 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     )
     reporter.finish("doctor", **report)
     return EXIT_OK if problems == 0 else EXIT_PARTIAL_FAILURE
+
+
+def _browser_launch_check(config: Config, browser: str, needs_windows_path: bool):
+    from .cdp import Chrome
+
+    try:
+        with ChromeLock(config.lock, timeout=10, port=config.port or None) as lock:
+            chrome = Chrome(
+                browser,
+                config.profile,
+                port=lock.port,
+                headless=config.headless,
+                needs_windows_path=needs_windows_path,
+                startup_timeout=25.0,
+            )
+            try:
+                chrome.start()
+                version = str(chrome.version.get("Browser") or "版本未知")
+            finally:
+                chrome.stop()
+        return True, version
+    except LockTimeout as exc:
+        return None, f"另一个下载任务正在运行（{exc}）"
+    except Exception as exc:
+        return False, f"{type(exc).__name__}: {exc}"
 
 
 def cmd_init(args: argparse.Namespace) -> int:
@@ -212,7 +250,13 @@ def cmd_harvest(args: argparse.Namespace) -> int:
                     year, limiter=limiter, progress=lambda m: reporter.say(m)
                 )
             except FetchError as exc:
-                reporter.warn(f"  {year} 年度页读取失败: {exc}")
+                if exc.status == 403:
+                    reporter.warn(
+                        f"  {year} 年度页被站点拒绝（HTTP 403）：当前网络下站点对普通页面请求也启用了验证，"
+                        "请稍后重试或更换网络；OAI-PMH 阶段的数据不受影响。"
+                    )
+                else:
+                    reporter.warn(f"  {year} 年度页读取失败: {exc}")
                 continue
             if not records:
                 reporter.say(f"  {year}: 年度页无内容")
@@ -700,7 +744,17 @@ def _normalize_global_options(argv: list[str]) -> list[str]:
     return moved + rest
 
 
+def _ensure_utf8_output() -> None:
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            if (stream.encoding or "").lower().replace("-", "") != "utf8":
+                stream.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
+
+
 def main(argv: Iterable[str] | None = None) -> int:
+    _ensure_utf8_output()
     parser = build_parser()
     raw = list(argv) if argv is not None else sys.argv[1:]
     args = parser.parse_args(_normalize_global_options(raw))

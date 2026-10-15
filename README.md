@@ -20,7 +20,7 @@ ePrint 元数据可通过 OAI-PMH 接口获取，其中的日期为最后修改�
 
 ## 安装
 
-Python 3.10 或更新版本。
+需要 Python 3.10 或更新版本，以及 Chrome、Chromium 或 Edge。下载时会弹出浏览器窗口，因此需要桌面环境，没有图形界面的服务器不能用。Ubuntu 自带的 snap 版 Chromium 只能访问家目录内的文件，数据目录需放在家目录下，或改装非 snap 版的 Chrome。`eprintdl doctor` 会启动一次浏览器做连通测试，并指出这些问题。
 
 ```bash
 pip install .
@@ -33,7 +33,7 @@ eprintdl doctor
 
 ### 方式一：接入 Claude Code 或 Codex（推荐）
 
-1. 生成 MCP 注册配置。脚本会探测本机 Python 路径，写出 `.mcp.json`（Claude Code）和 `.codex/config.toml`（Codex）：
+1. 生成 MCP 注册配置。脚本会探测本机 Python 路径，写出 `.mcp.json`（Claude Code）、项目级 `.codex/config.toml` 和用户级 `~/.codex/config.toml`（Codex）：
 
 ```bash
 python tools/setup_llm_cli.py
@@ -42,7 +42,7 @@ python tools/setup_llm_cli.py
 2. 重启 Claude Code 或 Codex。在 Claude Code 中用 `/mcp` 确认 `eprintdl` 已连接。
 3. 在Claude Code 或 Codex使用prompt："下载 eprint 2024/1000"，模型会调用工具完成下载并返回 PDF 的绝对路径。
 
-WSL 用户生成配置时需指定 Windows 版 Python，如 `python tools/setup_llm_cli.py --python /mnt/c/.../python.exe`。WSL2 默认网络模式下，Linux 进程无法连接 Windows Chrome 的调试端口，所以服务端需在 Windows 运行。返回的文件路径为 Windows 路径，需用 `wslpath -u` 转换。
+WSL 用户：脚本会自动选用 Windows 版 Python，因为 WSL2 默认网络模式下 Linux 进程无法连接 Windows Chrome 的调试端口，服务端需在 Windows 运行；找不到时用 `--python /mnt/c/.../python.exe` 指定。此时返回的文件路径为 Windows 路径，需用 `wslpath -u` 转换。Codex 只在项目被标记为受信任时才读取项目级 `.codex/config.toml`，所以脚本同时写入用户级配置，不依赖信任；不想改动用户级配置时加 `--no-codex-user`。
 
 ### 方式二：命令行
 
@@ -69,6 +69,9 @@ eprintdl --format json search --keyword lattice --limit 10
 
 - 下载时会打开浏览器窗口，请勿关闭。单篇通常耗时 0.5 到 2 秒，首篇需完成人机验证，约 2 到 8 秒。
 - 已下载的文件自动跳过，中断后重新运行同一命令即可继续。
+- WSL 中直接用命令行下载，需要 WSL 内装有 Linux 版浏览器，或把 WSL 网络改为镜像模式（`.wslconfig` 中 `networkingMode=mirrored`）；否则请用 Windows 版 Python 运行，`eprintdl doctor` 会给出提示。
+- 数据目录：在仓库内运行时由 `eprintdl.toml` 指定为仓库下的 `eprint-data/`；安装为命令后在其它目录运行时，默认为用户主目录下的 `eprint-data/`，可用 `eprintdl init` 在当前目录生成配置文件修改。
+- 采集元数据时若年度页返回 403，说明当前网络下站点对普通页面也启用了验证，稍后重试或更换网络即可；OAI-PMH 接口不受影响。
 - 默认下载间隔至少为 1 秒，后期需随机化延迟以及控制并发 **[TODO]**
 
 ## 声明

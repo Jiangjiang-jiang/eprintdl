@@ -156,7 +156,8 @@ def load_config(
         if not os.path.isabs(chrome_value):
             chrome_value = os.path.abspath(os.path.join(anchor, chrome_value))
 
-    base_dir = _expand(paths.get("base_dir", "eprint-data"), anchor)
+    default_base = "eprint-data" if path else os.path.join(os.path.expanduser("~"), "eprint-data")
+    base_dir = _expand(paths.get("base_dir", default_base), anchor)
     config = Config(
         config_file=path,
         base_dir=base_dir,
