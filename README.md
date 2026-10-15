@@ -10,7 +10,7 @@
 
 ## 已知问题
 
-ePrint 元数据可通过 OAI-PMH 接口获取，其中的日期为最后修改时间。论文 PDF 下载则需通过 Cloudflare 人机验证。论文 PDF 只能通过浏览器导航才能下载，直接用 urllib、requests 或 curl 请求会返回 403，在浏览器内通过脚本发起 fetch 请求也不行。
+ePrint 元数据可通过 OAI-PMH 接口获取，其中的日期为最后修改时间。站点robots.txt不允许爬虫批量下载论文 PDF ，因此需绕过该规则以及 Cloudflare 人机验证。单篇论文 PDF 只能通过浏览器手动下载，直接用 urllib、requests 或 curl 请求，在浏览器内通过脚本发起 fetch 请求均会返回 403。
 
 ## 工作原理
 
