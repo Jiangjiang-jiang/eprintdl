@@ -20,7 +20,7 @@
 
 ## 安装
 
-需要 Python 3.10 以上和桌面环境，下载要靠一个真实的浏览器窗口，默认最小化启动。Ubuntu 自带的 snap 版 Chromium 只能读写`~/`，数据目录要放在`~/`下。
+通过 MCP 接入时不需要安装，见下一节。需要 Python 3.10 以上和桌面环境，下载要靠一个真实的浏览器窗口，默认最小化启动。Ubuntu 自带的 snap 版 Chromium 只能读写`~/`，数据目录要放在`~/`下。
 
 ```bash
 pip install .
@@ -33,13 +33,32 @@ eprintdl doctor
 
 ### 接入 Claude Code 或 Codex（推荐）
 
-```bash
-python tools/setup_llm_cli.py
+不需要安装，`uvx` 会自动拉取并运行。Claude Code 加到 `.mcp.json`：
+
+```json
+{
+  "mcpServers": {
+    "eprintdl": {
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/Jiangjiang-jiang/eprintdl", "eprintdl-mcp"]
+    }
+  }
+}
 ```
 
-脚本会写出 `.mcp.json`、`.codex/config.toml` 和用户级 `~/.codex/config.toml`，重启 Claude Code 或 Codex，在 Claude Code 里用 `/mcp`、在 Codex 里用 `codex mcp list` 确认 eprintdl 已连接，之后输入prompt“下载 eprint 2024/1000”即可。
+Codex 加到 `~/.codex/config.toml`：
 
-WSL 下脚本会自动选 Windows 版 Python，这是因为 WSL2 默认网络下 Linux 进程连不上 Windows Chrome 的调试端口，无法找到时用 `--python /mnt/c/.../python.exe` 指定。返回的文件路径为 Windows 路径，需用 `wslpath -u` 转换。默认下载目录为 `eprint-data/`。
+```toml
+[mcp_servers.eprintdl]
+command = "uvx"
+args = ["--from", "git+https://github.com/Jiangjiang-jiang/eprintdl", "eprintdl-mcp"]
+startup_timeout_sec = 60.0
+tool_timeout_sec = 300.0
+```
+
+重启后在 Claude Code 里用 `/mcp`、在 Codex 里用 `codex mcp list` 确认 eprintdl 已连接，之后输入prompt“下载 eprint 2024/1000”即可。默认下载目录为 `~/eprint-data/`。
+
+WSL 下把 `uvx` 换成 Windows 版的 `uvx.exe`，因为 WSL2 默认网络下 Linux 进程连不上 Windows Chrome 的调试端口；返回的路径用 `wslpath -u` 转换。已克隆仓库的也可以用 `python tools/setup_llm_cli.py` 生成指向本地解释器的配置。
 
 ### 命令行
 
