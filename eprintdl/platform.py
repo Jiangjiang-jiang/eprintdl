@@ -252,7 +252,7 @@ WSL_LOOPBACK_HINT = (
     "WSL 正在使用 Windows 版浏览器，而 WSL2 的 NAT 网络模式下 Linux 进程连不上它的调试端口。"
     "可选做法：在 WSL 内安装 Linux 版浏览器（例如 sudo apt install chromium）；"
     "或在 Windows 用户目录的 .wslconfig 中 [wsl2] 下加 networkingMode=mirrored 并执行 wsl --shutdown；"
-    "或改用 Windows 版 Python 运行本工具。"
+    "或改用 Windows 版 Python 或 uvx.exe 运行本工具。"
 )
 
 
