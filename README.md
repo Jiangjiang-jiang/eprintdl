@@ -18,22 +18,13 @@
 2. 由于验证页和 PDF 是同一个地址，拦截验证页会导致页面脚本无法执行，所以如果识别到验证页，暂时放行让浏览器自己过验证，之后同一会话里的下载都能直接通过。
 3. 独占浏览器调试端口，用文件锁让多个进程排队下载。
 
-## 安装
+## 环境
 
-通过 MCP 接入时不需要安装，见下一节。需要 Python 3.10 以上和桌面环境，下载要靠一个真实的浏览器窗口，默认最小化启动。Ubuntu 自带的 snap 版 Chromium 只能读写`~/`，数据目录要放在`~/`下。
+Python 3.10 以上和桌面环境，下载要靠一个真实的浏览器窗口，默认最小化启动。Ubuntu 自带的 snap 版 Chromium 只能读写`~/`，数据目录要放在`~/`下。下载目录默认为 `~/eprint-data/`，`eprintdl init` 写出 `eprintdl.toml` 后可改。
 
-```bash
-pip install .
-eprintdl doctor
-```
+## 接入 Claude Code 或 Codex（推荐）
 
-`doctor` 会检查 Python、浏览器和网络，并启动一次浏览器试连。也可以在仓库目录下用 `python -m eprintdl`，或者直接调用 `eprintdl.cmd`、`eprintdl.sh`。
-
-## 使用
-
-### 接入 Claude Code 或 Codex（推荐）
-
-不需要安装，`uvx` 会自动拉取并运行。Claude Code 加到 `.mcp.json`：
+不需要安装，由 `uvx` 拉取并运行。Claude Code 的 `.mcp.json`：
 
 ```json
 {
@@ -46,7 +37,7 @@ eprintdl doctor
 }
 ```
 
-Codex 加到 `~/.codex/config.toml`：
+Codex 的 `~/.codex/config.toml`：
 
 ```toml
 [mcp_servers.eprintdl]
@@ -56,11 +47,18 @@ startup_timeout_sec = 60.0
 tool_timeout_sec = 300.0
 ```
 
-重启后在 Claude Code 里用 `/mcp`、在 Codex 里用 `codex mcp list` 确认 eprintdl 已连接，之后输入prompt“下载 eprint 2024/1000”即可。默认下载目录为 `~/eprint-data/`。
+重启后在 Claude Code 里用 `/mcp`、在 Codex 里用 `codex mcp list` 确认 eprintdl 已连接，之后输入prompt“下载 eprint 2024/1000”即可。
 
-WSL 下把 `uvx` 换成 Windows 版的 `uvx.exe`，因为 WSL2 默认网络下 Linux 进程连不上 Windows Chrome 的调试端口；返回的路径用 `wslpath -u` 转换。已克隆仓库的也可以用 `python tools/setup_llm_cli.py` 生成指向本地解释器的配置。
+WSL 下要用 Windows 版的 `uvx.exe`，Linux 进程连不上 Windows Chrome 的调试端口，返回的路径用 `wslpath -u` 转换。
 
-### 命令行
+## 命令行
+
+```bash
+pip install .
+eprintdl doctor
+```
+
+`doctor` 会检查 Python、浏览器和网络，并启动一次浏览器试连。也可以在仓库目录下用 `python -m eprintdl`，或者直接调用 `eprintdl.cmd`、`eprintdl.sh`。
 
 ```bash
 eprintdl harvest --years 2024                               # 采集元数据
@@ -72,9 +70,9 @@ eprintdl retry                                              # 重试失败项
 eprintdl export --years 2024 --out papers.csv               # 导出元数据
 ```
 
-加 `--json` 逐行输出 JSON，末行是汇总，`file_path` 是绝对路径；`--format json` 输出单个对象。退出码 0 成功，1 部分失败，2 参数错误，3 等锁超时。
+加 `--json` 逐行输出 JSON，末行是汇总，`file_path` 是绝对路径；`--format json` 输出单个对象。退出码 0 成功，1 部分失败，2 参数错误，3 等锁超时。`python tools/setup_llm_cli.py` 可生成指向本地解释器的 MCP 配置。
 
-### 注意
+## 注意
 
 - 浏览器默认最小化启动，请勿手动关闭。不可用无头模式，会被 Cloudflare 拦截。
 - 单篇通常耗时 0.5 到 2 秒，首篇需完成人机验证，约 2 到 8 秒。
