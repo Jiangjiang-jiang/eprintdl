@@ -20,7 +20,7 @@
 
 ## 环境
 
-Python 3.10 以上和桌面环境，下载要靠一个真实的浏览器窗口，默认最小化启动。Ubuntu 自带的 snap 版 Chromium 只能读写`~/`，数据目录要放在`~/`下。下载目录默认为 `~/eprint-data/`，`eprintdl init` 写出 `eprintdl.toml` 后可改。
+Python 3.10 以上和桌面环境，下载要靠一个真实的浏览器窗口，默认最小化启动。Ubuntu 自带的 snap 版 Chromium 只能读写`~/`，数据目录要放在`~/`下。下载目录默认为 `~/eprint-data/`。
 
 ## 接入 Claude Code 或 Codex（推荐）
 
