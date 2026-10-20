@@ -29,6 +29,7 @@ dev = []
 
 [project.scripts]
 eprintdl = "eprintdl.cli:main"
+eprintdl-mcp = "eprintdl.mcp_server:main"
 
 [project.urls]
 Repository = "https://github.com/Jiangjiang-jiang/eprintdl"
